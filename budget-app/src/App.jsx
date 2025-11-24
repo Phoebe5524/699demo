@@ -13,7 +13,7 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// === 辅助函数：日期格式化 (用于显示在格子左上角) ===
+// === 辅助函数：日期格式化 ===
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-');
@@ -36,7 +36,7 @@ const CATEGORIES_CONFIG = {
 };
 
 const INITIAL_TRANSACTIONS = RAW_DATA.map((item, index) => ({
-  id: index, // 确保这个 ID 是唯一的
+  id: index, 
   ...item,
   amount: Math.abs(item.amount),
 }));
@@ -46,11 +46,11 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   
   // === 表单状态 ===
-  const [editingId, setEditingId] = useState(null); // 新增：用于标记当前是否在编辑某个ID
+  const [editingId, setEditingId] = useState(null); 
   const [amount, setAmount] = useState('');
   const [memo, setMemo] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [formDate, setFormDate] = useState(''); // 新增：表单日期状态
+  const [formDate, setFormDate] = useState(''); 
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [unit, setUnit] = useState(20);
@@ -63,9 +63,7 @@ export default function App() {
   };
 
   const filteredTransactions = useMemo(() => {
-    // 简单的排序，让日期靠后的排在后面 (可选)
     const sorted = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
     if (activeFilter === 'All') {
       return sorted.filter(t => t.category !== 'Income');
     }
@@ -77,34 +75,30 @@ export default function App() {
     return Array.from(cats);
   }, []);
 
-  // === 1. 点击“+”号：进入新增模式 ===
+  // === 交互逻辑 ===
   const handleAddClick = () => {
-    setEditingId(null); // 清空编辑ID，表示新增
+    setEditingId(null); 
     setAmount('');
     setMemo('');
     setSelectedCategory(null);
-    setFormDate(new Date().toISOString().split('T')[0]); // 默认为今天
+    setFormDate(new Date().toISOString().split('T')[0]); 
     setShowModal(true);
   };
 
-  // === 2. 点击现有色块：进入编辑模式 ===
   const handleEditClick = (transaction) => {
-    setEditingId(transaction.id); // 记录正在编辑的ID
+    setEditingId(transaction.id); 
     setAmount(transaction.amount);
     setMemo(transaction.merchant);
     setSelectedCategory(transaction.category);
-    setFormDate(transaction.date); // 填充原有日期
+    setFormDate(transaction.date); 
     setShowModal(true);
   };
 
-  // === 3. 保存逻辑 (支持新增 & 修改) ===
   const handleSaveTransaction = () => {
     if (!amount || !selectedCategory || !formDate) return;
-    
     const numAmount = parseFloat(amount);
     
     if (editingId !== null) {
-      // --- 编辑模式：更新现有记录 ---
       setTransactions(prev => prev.map(t => {
         if (t.id === editingId) {
           return {
@@ -118,7 +112,6 @@ export default function App() {
         return t;
       }));
     } else {
-      // --- 新增模式：创建新记录 ---
       const newTrans = {
         id: Date.now(),
         category: selectedCategory,
@@ -128,7 +121,6 @@ export default function App() {
       };
       setTransactions(prev => [...prev, newTrans]);
     }
-
     setShowModal(false);
     setEditingId(null);
     setAmount('');
@@ -136,7 +128,7 @@ export default function App() {
     setSelectedCategory(null);
   };
 
-  // === 核心逻辑：连续流式填充算法 ===
+  // === 核心 Grid 逻辑 ===
   const ROW_HEIGHT = 68;
   const CELLS_PER_ROW = 20;
 
@@ -154,7 +146,7 @@ export default function App() {
         
         if (cellsToTake > 0) {
             blocks.push({
-                ...t, // 这里保留了 t.id，点击时会用到
+                ...t, 
                 uniqueKey: `${t.id}-${blocks.length}`, 
                 widthPercent: (cellsToTake / CELLS_PER_ROW) * 100,
                 isStart: blocks.length === 0 || blocks[blocks.length - 1].id !== t.id,
@@ -215,8 +207,14 @@ export default function App() {
         </div>
 
         {/* ================= 核心 Grid 区域 ================= */}
-        {/* ⚠️ 注意：这里去掉了 onClick={() => setShowModal(true)}，避免点击空白处触发 */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
+        {/* 
+            【修复点 1】：动态控制 overflow
+            如果弹窗打开 (showModal 为 true)，则设为 overflow-hidden，彻底禁止背景滚动
+        */}
+        <div className={cn(
+          "flex-1 custom-scrollbar bg-white",
+          showModal ? "overflow-hidden" : "overflow-y-auto"
+        )}>
           <div className="min-h-full relative">
             
             {/* 网格线层 */}
@@ -237,7 +235,6 @@ export default function App() {
               {displayBlocks.map((block) => (
                 <div 
                   key={block.uniqueKey}
-                  // ⚠️ 点击已有的块 -> 进入编辑模式
                   onClick={() => handleEditClick(block)}
                   className={cn(
                     "h-[68px] relative transition-all hover:brightness-105 overflow-hidden cursor-pointer",
@@ -261,7 +258,6 @@ export default function App() {
                 </div>
               ))}
               
-              {/* ⚠️ Add 按钮块 -> 点击进入新增模式 */}
               <div 
                 onClick={handleAddClick}
                 className="h-[68px] bg-gray-50/50 flex items-center justify-center text-gray-400 text-xs hover:bg-gray-100 cursor-pointer" 
@@ -288,21 +284,26 @@ export default function App() {
             <div className="absolute bottom-0 left-0 right-0 bg-[#F2F2F7] rounded-t-[30px] p-6 animate-slide-up shadow-2xl h-[90%] flex flex-col">
               <button onClick={() => setShowModal(false)} className="absolute right-6 top-6 p-2 bg-gray-200 rounded-full hover:bg-gray-300"><X size={20} className="text-gray-600" /></button>
               
-              {/* 标题根据模式变化 */}
               <h2 className="text-lg font-semibold text-gray-800 mb-6">
                 {editingId ? 'Edit Transaction' : 'New Transaction'}
               </h2>
 
               <div className="flex items-center mb-6 border-b border-gray-300/50 pb-2">
                 <span className="text-4xl font-bold text-gray-400 mr-2">$</span>
-                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" className="bg-transparent text-5xl font-bold text-black outline-none w-full placeholder:text-gray-300" autoFocus />
+                {/* 
+                   【修复点 2】：移除了 autoFocus 
+                   这会阻止浏览器在弹窗打开时尝试滚动页面去定位输入框
+                */}
+                <input 
+                  type="number" 
+                  value={amount} 
+                  onChange={(e) => setAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  className="bg-transparent text-5xl font-bold text-black outline-none w-full placeholder:text-gray-300" 
+                />
               </div>
               
               <div className="space-y-2 mb-6">
-                {/* 
-                  ⚠️ 日期修改为原生 <input type="date">
-                  样式上去掉了默认边框，使其融入 UI
-                */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-300/50">
                   <span className="font-semibold text-gray-900">Date</span>
                   <div className="flex items-center gap-2 text-blue-500 text-sm relative">
