@@ -7,6 +7,8 @@ import {
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { RAW_DATA } from '../data';
+import chatBotBubble from '../assets/chatbotbubble.png';
+import rabbit from '../assets/rabbit.png';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -153,9 +155,19 @@ export default function Analysis() {
         {/* Header */}
         <div className="px-6 pt-12 pb-4 flex justify-between items-center bg-white z-10">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Analysis</h1>
-          <div className="h-9 px-3 rounded-full bg-red-100 flex items-center gap-2 text-xs font-bold text-red-500">
-             Ask! <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px]">🤖</div>
-          </div>
+          <div className="h-9 pl-4 pr-0 rounded-full bg-red-100 flex items-center gap-1 text-xs font-bold text-black-500 justify-end overflow-hidden">
+          {/* 文字部分 */}
+          <span className="mb-[1px]">Ask!</span>
+          
+          {/* 图片部分 */}
+          <img 
+            src={rabbit} 
+            alt="Ask" 
+            // h-full 让高度撑满，w-auto 自适应
+            // object-cover 可能会更好看，让图片填满右边圆弧
+            className="h-full w-auto object-cover" 
+          />
+        </div>
         </div>
 
         {/* Tab Switcher */}
@@ -408,10 +420,6 @@ export default function Analysis() {
                    <button className="flex items-center gap-1 text-sm font-bold text-gray-500 uppercase">
                       ALL <ChevronDown size={14}/>
                    </button>
-                   <div className="flex gap-4 text-xs font-bold text-gray-400">
-                      <span>Budget</span>
-                      <span className="text-black bg-[#FCE873] px-2 rounded-md">Savings</span>
-                   </div>
                 </div>
 
                 {/* Total Savings (Sum of all months) */}

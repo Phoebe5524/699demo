@@ -9,6 +9,8 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { RAW_DATA } from '../data'; 
 
+import rabbit from '../assets/rabbit.png';
+
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
@@ -174,11 +176,20 @@ export default function EnvelopePage() {
             </h1>
             <ChevronDown size={20} className="text-gray-400 mt-1" />
           </div>
-          <div className="h-9 px-3 rounded-full bg-red-100 flex items-center gap-2 text-xs font-bold text-red-500">
-             Ask! 
-             <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-[8px]">🤖</div>
-          </div>
+          <div className="h-9 pl-4 pr-0 rounded-full bg-red-100 flex items-center gap-1 text-xs font-bold text-black-500 justify-end overflow-hidden">
+          {/* 文字部分 */}
+          <span className="mb-[1px]">Ask!</span>
+          
+          {/* 图片部分 */}
+          <img 
+            src={rabbit} 
+            alt="Ask" 
+            // h-full 让高度撑满，w-auto 自适应
+            // object-cover 可能会更好看，让图片填满右边圆弧
+            className="h-full w-auto object-cover" 
+          />
         </div>
+      </div>
 
         {/* === 2. Top Visualization Bar (New Design) === */}
         <div className="px-6 pt-2 pb-6 bg-white rounded-b-[30px] shadow-sm mb-4 z-10">
