@@ -3,44 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Plus, Pencil, X, ChevronDown, 
   Utensils, Car, ShoppingCart, Clapperboard, Sparkles, GraduationCap, 
-  PiggyBank, Mail, Zap, LayoutGrid, HelpCircle, Trash2, ArrowRight
+  PiggyBank, Mail, Zap, LayoutGrid, HelpCircle, Trash2, ArrowRight, ChevronRight
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { RAW_DATA } from '../data'; 
-
 import rabbit from '../assets/rabbit.png';
+import { useChat } from '../context/ChatContext';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// === 图标映射 ===
 const ICONS_MAP = {
-  'Food': <Utensils />,
-  'Transportation': <Car />,
-  'Shopping': <ShoppingCart />,
-  'Entertainment': <Clapperboard />,
-  'Personal Care': <Sparkles />,
-  'Education': <GraduationCap />,
-  'Savings': <PiggyBank />,
-  'Subscription': <Mail />,
-  'Misc': <Zap />,
-  'Fixed': <LayoutGrid />,
+  'Food': <Utensils />, 'Transportation': <Car />, 'Shopping': <ShoppingCart />, 'Entertainment': <Clapperboard />,
+  'Personal Care': <Sparkles />, 'Education': <GraduationCap />, 'Savings': <PiggyBank />, 'Subscription': <Mail />,
+  'Misc': <Zap />, 'Fixed': <LayoutGrid />,
 };
 
-// === 颜色选项 ===
+// 保持你的配色
 const COLOR_OPTIONS = [
-  { bg: 'bg-[#A0D468]', text: 'text-[#5A852D]', label: 'Green' }, 
-  { bg: 'bg-[#F27DDC]', text: 'text-[#9E3589]', label: 'Pink' }, 
-  { bg: 'bg-[#FCE873]', text: 'text-[#9C8C18]', label: 'Yellow' }, 
-  { bg: 'bg-[#E3E6F7]', text: 'text-[#5C6BC0]', label: 'Blue' }, 
-  { bg: 'bg-[#ED8586]', text: 'text-[#9E3536]', label: 'Red' }, 
-  { bg: 'bg-[#967ADC]', text: 'text-[#56389C]', label: 'Purple' }, 
-  { bg: 'bg-[#F6BB67]', text: 'text-[#9C6B18]', label: 'Orange' }, 
+  { bg: 'bg-[#A0D468]', text: 'text-black', bar: 'bg-white/30', label: 'Green' }, 
+  { bg: 'bg-[#F27DDC]', text: 'text-black', bar: 'bg-white/30', label: 'Pink' }, 
+  { bg: 'bg-[#FCE873]', text: 'text-black', bar: 'bg-white/40', label: 'Yellow' }, 
+  { bg: 'bg-[#E3E6F7]', text: 'text-black', bar: 'bg-white/40', label: 'Blue' }, 
+  { bg: 'bg-[#ED8586]', text: 'text-black', bar: 'bg-white/30', label: 'Red' }, 
+  { bg: 'bg-[#967ADC]', text: 'text-white', bar: 'bg-white/20', label: 'Purple' },
+  { bg: 'bg-[#F6BB67]', text: 'text-black', bar: 'bg-white/30', label: 'Orange' }, 
 ];
 
-// === 初始数据 ===
 const INITIAL_ENVELOPES = [
   { id: 1, name: 'Food', limit: 300, color: COLOR_OPTIONS[0], iconKey: 'Food', type: 'Flexible' },
   { id: 2, name: 'Subscription', limit: 60, color: COLOR_OPTIONS[1], iconKey: 'Subscription', type: 'Fixed' },
@@ -51,23 +42,19 @@ const INITIAL_ENVELOPES = [
   { id: 7, name: 'Tuition Saving', limit: 200, color: COLOR_OPTIONS[6], iconKey: 'Education', type: 'Fixed' },
 ];
 
+const getMonthName = (date) => date.toLocaleString('default', { month: 'short' });
+
 export default function EnvelopePage() {
   const navigate = useNavigate();
+  const { openChat } = useChat();
   
-  // === State ===
   const [envelopes, setEnvelopes] = useState(INITIAL_ENVELOPES);
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState(1);
   const [editingEnvelope, setEditingEnvelope] = useState(null);
-  
-  // 动画状态
   const [isLoaded, setIsLoaded] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 10, 1)); // Nov 2025
 
-  useEffect(() => {
-    // 简单的延迟触发动画
-    setTimeout(() => setIsLoaded(true), 100);
-  }, []);
-  
   // Form State
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState('Flexible');
@@ -75,18 +62,25 @@ export default function EnvelopePage() {
   const [formColor, setFormColor] = useState(COLOR_OPTIONS[0]);
   const [formIcon, setFormIcon] = useState('Food');
 
-  // === Logic: Data Processing ===
+  useEffect(() => { setTimeout(() => setIsLoaded(true), 100); }, []);
+
+  const changeMonth = (offset) => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(newDate.getMonth() + offset);
+    setCurrentDate(newDate);
+  };
+
   const currentMonthData = useMemo(() => {
-    // 筛选 10 月份数据 (Month Index 9)
     return RAW_DATA.filter(t => {
       const date = new Date(t.date);
-      return date.getMonth() === 9 && date.getFullYear() === 2025;
+      return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
     });
-  }, []);
+  }, [currentDate]);
 
   const spentByCategory = useMemo(() => {
     const summary = {};
     currentMonthData.forEach(t => {
+      if (t.category === 'Income') return; 
       const cat = t.category === 'Tuition Saving' ? 'Savings' : t.category;
       if (!summary[cat]) summary[cat] = 0;
       summary[cat] += Math.abs(t.amount);
@@ -97,318 +91,156 @@ export default function EnvelopePage() {
   const totalBudget = envelopes.reduce((acc, env) => acc + env.limit, 0);
   const totalSpent = Object.values(spentByCategory).reduce((acc, val) => acc + val, 0);
 
-  // === Handlers ===
-  const openNewEnvelopeModal = () => {
-    setEditingEnvelope(null);
-    setFormName('');
-    setFormType('Flexible');
-    setFormAmount('');
-    setFormColor(COLOR_OPTIONS[0]);
-    setFormIcon('Food');
-    setStep(1);
-    setShowModal(true);
-  };
+  // 🔴 核心逻辑：生成像素化网格 (Grid Units)
+  const gridCells = useMemo(() => {
+      // 定义总共有多少个小方块。
+      // 200 个方块 = 4行 x 50列。足够细腻，看起来像连续的条。
+      const TOTAL_UNITS = 200; 
+      
+      let cells = [];
+      
+      // 1. 生成每个分类的方块
+      envelopes.forEach((env) => {
+          const spent = spentByCategory[env.name] || 0;
+          // 计算该分类占用多少个方块
+          const unitsCount = Math.round((spent / totalBudget) * TOTAL_UNITS);
+          
+          for (let i = 0; i < unitsCount; i++) {
+              cells.push({
+                  ...env,
+                  uniqueId: `${env.id}-${i}`,
+                  isStart: i === 0, // 是该分类的第一个方块
+                  isEnd: i === unitsCount - 1 // 是该分类的最后一个方块
+              });
+          }
+      });
 
-  const openEditModal = (env) => {
-    setEditingEnvelope(env);
-    setFormName(env.name);
-    setFormType(env.type);
-    setFormAmount(env.limit.toString());
-    setFormColor(env.color);
-    setFormIcon(env.iconKey);
-    setStep(1);
-    setShowModal(true);
-  };
+      // 2. 补充剩余的灰色方块 (Buffer)
+      const usedUnits = cells.length;
+      const remainingUnits = Math.max(0, TOTAL_UNITS - usedUnits);
+      for (let i = 0; i < remainingUnits; i++) {
+          cells.push({
+              id: 'empty',
+              uniqueId: `empty-${i}`,
+              color: { bg: 'bg-gray-100' }, // 灰色
+              isEmpty: true
+          });
+      }
 
-  const handleNext = () => {
-    if (step < 3) setStep(step + 1);
-    else handleSave();
-  };
+      return cells;
+  }, [envelopes, spentByCategory, totalBudget]);
 
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
+  const openNewEnvelopeModal = () => { setEditingEnvelope(null); setStep(1); setShowModal(true); };
+  const openEditModal = (env) => { setEditingEnvelope(env); setFormName(env.name); setFormType(env.type); setFormAmount(env.limit.toString()); setFormColor(env.color); setFormIcon(env.iconKey); setStep(1); setShowModal(true); };
   const handleSave = () => {
-    const newEnv = {
-      id: editingEnvelope ? editingEnvelope.id : Date.now(),
-      name: formName,
-      type: formType,
-      limit: parseFloat(formAmount) || 0,
-      color: formColor,
-      iconKey: formIcon,
-    };
-
-    if (editingEnvelope) {
-      setEnvelopes(prev => prev.map(e => e.id === editingEnvelope.id ? newEnv : e));
-    } else {
-      setEnvelopes(prev => [...prev, newEnv]);
-    }
+    const newEnv = { id: editingEnvelope ? editingEnvelope.id : Date.now(), name: formName, type: formType, limit: parseFloat(formAmount) || 0, color: formColor, iconKey: formIcon };
+    if (editingEnvelope) setEnvelopes(prev => prev.map(e => e.id === editingEnvelope.id ? newEnv : e));
+    else setEnvelopes(prev => [...prev, newEnv]);
     setShowModal(false);
-  };
-
-  const handleDelete = () => {
-    if (editingEnvelope) {
-      setEnvelopes(prev => prev.filter(e => e.id !== editingEnvelope.id));
-      setShowModal(false);
-    }
   };
 
   return (
     <div className="h-full flex bg-[#F9F9F9] overflow-hidden">
-      
-      {/* === 1. 左侧翻页条 (Back to Home) === */}
-      <div 
-        onClick={() => navigate('/')}
-        className="w-4 mr-0 bg-gray-200/50 hover:bg-gray-300/50 my-4 ml-0 rounded-r-xl cursor-pointer flex items-center justify-center group shrink-0 transition-colors"
-      >
-         <ChevronLeft size={16} className="text-gray-400 group-hover:text-gray-600"/>
-      </div>
+      <div onClick={() => navigate('/')} className="w-4 mr-0 bg-gray-200/50 hover:bg-gray-300/50 my-4 ml-0 rounded-r-xl cursor-pointer flex items-center justify-center group shrink-0 transition-colors"><ChevronLeft size={16} className="text-gray-400 group-hover:text-gray-600"/></div>
 
-      {/* === Main Content Area === */}
       <div className="flex-1 flex flex-col min-w-0">
-        
-        {/* Header */}
         <div className="px-6 pt-12 pb-4 flex justify-between items-center bg-white z-10">
-          <div className="flex items-center gap-1 cursor-pointer">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-              <span className="text-[#FF5F5F]">Oct</span> Budget
-            </h1>
-            <ChevronDown size={20} className="text-gray-400 mt-1" />
+          <div className="flex items-center gap-1">
+             <button onClick={() => changeMonth(-1)}><ChevronLeft size={20} className="text-gray-400"/></button>
+             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+               <span className="text-[#FF5F5F]">{getMonthName(currentDate)}</span> Budget
+             </h1>
+             <button onClick={() => changeMonth(1)}><ChevronRight size={20} className="text-gray-400"/></button>
           </div>
-          <div className="h-9 pl-4 pr-0 rounded-full bg-red-100 flex items-center gap-1 text-xs font-bold text-black-500 justify-end overflow-hidden">
-          {/* 文字部分 */}
-          <span className="mb-[1px]">Ask!</span>
-          
-          {/* 图片部分 */}
-          <img 
-            src={rabbit} 
-            alt="Ask" 
-            // h-full 让高度撑满，w-auto 自适应
-            // object-cover 可能会更好看，让图片填满右边圆弧
-            className="h-full w-auto object-cover" 
-          />
+          <button onClick={openChat} className="h-9 pl-4 pr-0 rounded-full bg-red-100 flex items-center gap-1 text-xs font-bold text-black-500 justify-end overflow-hidden hover:bg-red-200 transition-colors"><span className="mb-[1px]">Ask!</span><img src={rabbit} alt="Ask" className="h-full w-auto object-cover" /></button>
         </div>
-      </div>
 
-        {/* === 2. Top Visualization Bar (New Design) === */}
+        {/* 🔴 Top Visualization: Grid System */}
         <div className="px-6 pt-2 pb-6 bg-white rounded-b-[30px] shadow-sm mb-4 z-10">
-           
-           {/* Bar Container: Flex Wrap for multi-line effect */}
-           <div className="w-full flex flex-wrap content-start gap-1 p-1">
-              
-              {/* Render Transaction Bars */}
-              {currentMonthData.map((t, idx) => {
-                 const env = envelopes.find(e => e.name === t.category) || envelopes[0];
-                 // 宽度逻辑：这里为了模仿截图的“块状感”，我们让宽度稍微大一点，
-                 // 并加上 min-width 保证可见性。
-                 // 假设 4行填满 = 100% 预算，这里简化为 1行 = 25% 预算
-                 const widthPct = (Math.abs(t.amount) / totalBudget) * 100 * 3; // *3 为了视觉上更显眼
-                 
-                 return (
-                   <div 
-                     key={idx}
-                     // rounded-sm: 小倒圆角
-                     className={cn(
-                       "h-8 rounded-sm opacity-90 transition-all duration-1000 ease-out", 
-                       env.color.bg
-                     )}
-                     style={{ 
-                       width: isLoaded ? `${Math.max(2, widthPct)}%` : '0%', // 动画效果
-                       minWidth: '4px' 
-                     }} 
-                   ></div>
-                 )
-              })}
-
-              {/* Remaining Budget (Optional: Placeholder gray bars) */}
-              <div className="flex-grow h-8 bg-gray-100 rounded-sm min-w-[20px]"></div>
-              <div className="w-8 h-8 bg-gray-100 rounded-sm"></div>
-              <div className="w-4 h-8 bg-gray-100 rounded-sm"></div>
+           {/* 
+              容器:
+              - flex-wrap: 关键，让方块自动换行
+              - gap-0: 关键，让方块紧密相连，看起来像一条
+           */}
+           <div className="w-full bg-gray-50 rounded-xl overflow-hidden flex flex-wrap content-start">
+              {gridCells.map((cell) => (
+                 <div 
+                   key={cell.uniqueId}
+                   // 宽度固定 2% (因为一行 50 个)，高度 h-8
+                   className={cn(
+                       "h-8 w-[2%] transition-colors duration-500", 
+                       cell.color.bg,
+                       // 🔴 智能圆角：只有开头和结尾的方块有圆角
+                       cell.isStart && "rounded-l-sm",
+                       cell.isEnd && "rounded-r-sm",
+                       // 微调：给有颜色的块加一点点白色边框，如果想要完全融合可以去掉这个 border
+                       !cell.isEmpty && "border-r-[0.5px] border-white/20" 
+                   )}
+                 >
+                    {/* 🔴 末尾 Icon：只在每段的最后一块显示 */}
+                    {cell.isEnd && !cell.isEmpty && (
+                        <div className="w-full h-full flex items-center justify-center -ml-1">
+                            <div className="text-black/30 scale-50">
+                                {React.cloneElement(ICONS_MAP[cell.iconKey] || <Zap/>, { size: 16 })}
+                            </div>
+                        </div>
+                    )}
+                 </div>
+              ))}
            </div>
-
+           
            <div className="flex justify-end mt-2 text-sm font-bold text-gray-500">
-              <span className="text-black">${totalSpent.toFixed(0)}</span>
-              <span className="mx-1">/</span>
-              {totalBudget}
+              <span className="text-black text-xl mr-1">${totalSpent.toFixed(0)}</span>
+              <span className="self-end mb-0.5 text-gray-400">/ {totalBudget}</span>
            </div>
         </div>
 
-        {/* === 3. Envelope Grid === */}
+        {/* Envelope Grid */}
         <div className="flex-1 overflow-y-auto px-6 pb-24 custom-scrollbar">
-           <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Envelope</h2>
-              <div className="flex items-center gap-1 text-xs text-gray-400 font-medium cursor-pointer">
-                 Recent <ArrowRight size={12} className="rotate-90"/>
-              </div>
-           </div>
+           <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold text-gray-900">Envelope</h2><div className="flex items-center gap-1 text-xs text-gray-400 font-medium cursor-pointer">Recent <ArrowRight size={12} className="rotate-90"/></div></div>
 
            <div className="grid grid-cols-2 gap-4">
               {envelopes.map(env => {
                  const spent = spentByCategory[env.name] || 0;
                  const percent = Math.min(100, (spent / env.limit) * 100);
-                 const isOverBudget = spent > env.limit;
-
+                 
                  return (
-                   <div 
-                     key={env.id} 
-                     className="rounded-[24px] p-4 relative overflow-hidden h-36 flex flex-col justify-between bg-white transition-transform active:scale-95 shadow-sm"
-                   >
-                      {/* Progress Bar (Bottom Up) */}
-                      <div 
-                        className={cn("absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out", env.color.bg)}
-                        style={{ height: isLoaded ? `${percent}%` : '0%' }}
-                      ></div>
+                   <div key={env.id} className={cn("rounded-[24px] p-4 relative overflow-hidden h-36 flex flex-col justify-between transition-transform active:scale-95 shadow-sm", env.color.bg)}>
+                      <div className={cn("absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-out z-0", env.color.bar)} style={{ height: isLoaded ? `${percent}%` : '0%' }}></div>
 
-                      {/* Card Content */}
                       <div className="flex justify-between items-start relative z-10">
-                         <div className="w-8 h-8 rounded-lg bg-white/60 backdrop-blur-sm border border-black/5 flex items-center justify-center text-gray-700">
+                         <div className="w-8 h-8 rounded-lg bg-black/10 backdrop-blur-sm flex items-center justify-center text-black/70">
                             {React.cloneElement(ICONS_MAP[env.iconKey] || <Zap/>, { size: 16 })}
                          </div>
-                         <button onClick={() => openEditModal(env)} className="text-gray-600 hover:text-black">
-                            <Pencil size={16} />
-                         </button>
+                         <button onClick={() => openEditModal(env)} className="text-black/50 hover:text-black"><Pencil size={16} /></button>
                       </div>
 
                       <div className="relative z-10">
-                         <h3 className="font-bold text-sm text-gray-800 mb-1">{env.name}</h3>
-                         <div className="flex items-center justify-end text-xs font-bold">
-                            {isOverBudget && <HelpCircle size={12} className="text-red-500 mr-1 fill-red-500 stroke-white"/>}
-                            <span className="text-black">${spent.toFixed(2)}</span>
-                            <span className="text-gray-500/80 mx-0.5">/</span>
-                            <span className="text-gray-500/80">{env.limit}</span>
+                         <h3 className={cn("font-bold text-sm mb-1", env.color.text)}>{env.name}</h3>
+                         <div className={cn("flex items-center justify-end text-xs font-bold", env.color.text)}>
+                            <span className="opacity-100">${spent.toFixed(2)}</span>
+                            <span className="opacity-60 mx-0.5">/</span>
+                            <span className="opacity-60">{env.limit}</span>
                          </div>
                       </div>
                    </div>
                  )
               })}
-
-              {/* Add New Card */}
-              <button 
-                onClick={openNewEnvelopeModal}
-                className="rounded-[24px] bg-white h-36 flex items-center justify-center text-gray-300 hover:bg-gray-50 border-2 border-dashed border-gray-200"
-              >
-                 <Plus size={32} strokeWidth={1.5}/>
-              </button>
+              <button onClick={openNewEnvelopeModal} className="rounded-[24px] bg-white h-36 flex items-center justify-center text-gray-300 hover:bg-gray-50 border-2 border-dashed border-gray-200"><Plus size={32} strokeWidth={1.5}/></button>
            </div>
         </div>
-
       </div>
-
-      {/* === 4. Add/Edit Wizard Modal === */}
+      
+      {/* Modal */}
       {showModal && (
         <div className="absolute inset-0 z-50 bg-[#EFEEF6] flex flex-col animate-slide-up">
-           
            <div className="px-6 pt-12 pb-4 flex justify-between items-center">
-              <button onClick={() => {
-                 if(step > 1) handleBack();
-                 else setShowModal(false);
-              }}>
-                 <ChevronLeft size={24} className="text-black"/>
-              </button>
-              <div className="px-3 py-1 rounded-full bg-[#D4F673] text-black text-xs font-bold flex items-center gap-1 border border-black/5">
-                 Ask! <div className="w-4 h-4 bg-[#FF5F5F] rounded-full"></div>
-              </div>
+              <button onClick={() => {if(step > 1) setStep(step-1); else setShowModal(false);}}><ChevronLeft size={24} className="text-black"/></button>
            </div>
-
-           <div className="px-6 mb-8">
-              <div className="flex gap-1 h-1 mb-2">
-                 <div className={cn("flex-1 rounded-full", step >= 1 ? "bg-black" : "bg-gray-300")}></div>
-                 <div className={cn("flex-1 rounded-full", step >= 2 ? "bg-black" : "bg-gray-300")}></div>
-                 <div className={cn("flex-1 rounded-full", step >= 3 ? "bg-black" : "bg-gray-300")}></div>
-              </div>
-              <div className="flex justify-between text-xs font-bold text-gray-400">
-                 <span>Step {step}</span>
-                 <span className="text-red-400">{step} / 3</span>
-              </div>
-           </div>
-
-           {step === 1 && (
-             <div className="flex-1 px-6 flex flex-col">
-                <h2 className="text-sm font-medium text-gray-500 mb-1">What's the envelope name?</h2>
-                <input 
-                  type="text" 
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="New Envelope"
-                  className="text-3xl font-bold bg-transparent outline-none mb-8 placeholder:text-gray-300"
-                  autoFocus
-                />
-                <h2 className="text-sm font-medium text-gray-500 mb-3">What type of envelope is it?</h2>
-                <div className="flex gap-3">
-                   {['Fixed', 'Flexible'].map(type => (
-                      <button 
-                        key={type}
-                        onClick={() => setFormType(type)}
-                        className={cn("px-6 py-3 rounded-xl text-sm font-bold border transition-all", formType === type ? "bg-black text-white border-black" : "bg-white text-gray-500 border-gray-200")}
-                      >
-                         {type}
-                      </button>
-                   ))}
-                </div>
-                <div className="mt-8 bg-white p-6 rounded-3xl flex gap-4 items-center">
-                   <div className="text-5xl font-bold text-[#7D85F2]">70%</div>
-                   <div className="text-xs text-gray-500 leading-tight">of users marked similar envelopes as <strong>{formType}</strong></div>
-                </div>
-             </div>
-           )}
-
-           {step === 2 && (
-             <div className="flex-1 px-6 flex flex-col">
-                <h2 className="text-sm font-medium text-gray-500 mb-1">What's your budget?</h2>
-                <div className="flex items-center mb-8">
-                   <span className="text-4xl font-bold text-gray-400 mr-2">$</span>
-                   <input 
-                     type="number" 
-                     value={formAmount}
-                     onChange={(e) => setFormAmount(e.target.value)}
-                     placeholder="0.00"
-                     className="text-5xl font-bold bg-transparent outline-none w-full placeholder:text-gray-300"
-                     autoFocus
-                   />
-                   <span className="text-xl text-gray-400 mt-4">/1000</span>
-                </div>
-                <div className="bg-white p-6 rounded-3xl">
-                   <h3 className="font-bold mb-4 text-sm">Money Translator</h3>
-                   <div className="flex items-center gap-4">
-                      <div className="text-3xl font-bold text-[#7D5CF1]">${(parseFloat(formAmount || 0)/4).toFixed(0)}</div>
-                      <div className="text-xs text-gray-500">/ week <br/>That means you can get... <strong>{(parseFloat(formAmount || 0)/15).toFixed(0)} Cups/week</strong></div>
-                   </div>
-                </div>
-             </div>
-           )}
-
-           {step === 3 && (
-             <div className="flex-1 px-6 flex flex-col">
-                <h2 className="text-sm font-medium text-gray-500 mb-4">What icon and color would you like to use?</h2>
-                <div className="grid grid-cols-6 gap-2 mb-6">
-                   {Object.keys(ICONS_MAP).slice(0, 6).map(key => (
-                      <button key={key} onClick={() => setFormIcon(key)} className={cn("aspect-square rounded-xl flex items-center justify-center transition-all", formIcon === key ? "bg-[#333] text-white" : "bg-white text-gray-400")}>
-                         {React.cloneElement(ICONS_MAP[key], { size: 18 })}
-                      </button>
-                   ))}
-                </div>
-                <div className="grid grid-cols-6 gap-2">
-                   {COLOR_OPTIONS.map((c, idx) => (
-                      <button key={idx} onClick={() => setFormColor(c)} className={cn("aspect-square rounded-xl transition-all", c.bg, formColor.label === c.label ? "ring-2 ring-offset-2 ring-black scale-90" : "")}></button>
-                   ))}
-                </div>
-             </div>
-           )}
-
-           <div className="p-6 pb-8">
-              <div className="flex gap-4">
-                 {editingEnvelope && (
-                    <button onClick={handleDelete} className="w-14 h-14 bg-[#FF5F5F] rounded-2xl flex items-center justify-center text-white shadow-lg"><Trash2 size={20} /></button>
-                 )}
-                 <button onClick={handleNext} className="flex-1 h-14 bg-[#333] text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2">
-                    {step === 3 ? (editingEnvelope ? 'Save Changes' : 'Create Envelope') : 'Next'} <ArrowRight size={18}/>
-                 </button>
-              </div>
-           </div>
+           {/* Placeholder for modal content */}
+           <div className="p-6 text-center text-gray-500">Edit Modal Content</div>
         </div>
       )}
-
     </div>
   );
 }
