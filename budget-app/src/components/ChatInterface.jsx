@@ -122,7 +122,7 @@ const callGeminiAPI = async (userText, historyMessages) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 2000 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 20000 }
       })
     });
 
