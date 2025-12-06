@@ -42,7 +42,7 @@ const INITIAL_ENVELOPES = [
   { id: 7, name: 'Tuition Saving', limit: 200, color: COLOR_OPTIONS[6], iconKey: 'Education', type: 'Fixed' },
 ];
 
-const getMonthName = (date) => date.toLocaleString('default', { month: 'short' });
+const getMonthName = (date) => date.toLocaleString('en-US', { month: 'short' });
 
 export default function EnvelopePage() {
   const navigate = useNavigate();

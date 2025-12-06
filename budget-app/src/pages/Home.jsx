@@ -25,7 +25,7 @@ const formatDate = (dateStr) => {
 };
 
 const getMonthName = (date) => {
-  return date.toLocaleString('default', { month: 'long' });
+  return date.toLocaleString('en-US', { month: 'long' });
 };
 
 const CATEGORIES_CONFIG = {
