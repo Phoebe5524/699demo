@@ -5,7 +5,7 @@ import { RAW_DATA } from '../data';
 import rabbit from '../assets/rabbit.png'; 
 
 // 🔴 保持你的 API KEY
-const GEMINI_API_KEY = "AIzaSyBrZEMTQMHFLF7mHiSC-WOGglXAytf1Iz8"; 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // === 1. 打字机效果组件 ===
 const Typewriter = ({ text, onComplete }) => {
